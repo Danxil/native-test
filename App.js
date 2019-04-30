@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import {
   Platform,
   StatusBar,
@@ -9,56 +9,70 @@ import {
   AppLoading,
   Asset,
   Font,
+  Constants,
 } from 'expo';
+import { withState, withHandlers, compose } from 'recompose';
+import PropTypes from 'prop-types';
+import { Provider } from 'react-redux';
+
+import AppNavigator from './components/AppNavigator';
+
 import exceptionsHandler from './helpers/exceptionsHandler';
-
-const assetPathsOfApp = {
-  assetPaths: [
-    './assets/images/robot-dev.png',
-    './assets/images/robot-prod.png',
-  ],
-  fontPaths: [
-    './assets/fonts/SpaceMono-Regular.ttf',
-  ],
-};
-
-const loadResourcesAsyncWithExpo = async ({ assetPaths, fontPaths }) => Promise.all([
-  // eslint-disable-next-line global-require,import/no-dynamic-require
-  Asset.loadAsync(assetPaths.map(assetPath => require(assetPath))),
-  // eslint-disable-next-line global-require,import/no-dynamic-require
-  Font.loadAsync((fontPaths.map(assetPath => require(assetPath)))),
-]);
-const handleLoadingSuccess = ({ setIsLoadingComplete }) => {
-  setIsLoadingComplete(true);
-};
+import configureStore from './redux/configureStore';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    marginTop: Constants.statusBarHeight,
   },
 });
 
 const App = ({
-  assetPaths = assetPathsOfApp,
-  loadResourcesAsync = loadResourcesAsyncWithExpo,
-  handleLoadingError = exceptionsHandler,
+  loadResourcesAsync,
+  loadResourcesSuccess,
+  isLoadingComplete,
 }) => {
-  const [isLoadingComplete, setIsLoadingComplete] = useState(false);
-  const startAsync = useCallback(() => loadResourcesAsync({ ...assetPaths }));
   if (!isLoadingComplete) {
     return (
       <AppLoading
-        startAsync={startAsync}
-        onError={handleLoadingError}
-        onFinish={useCallback(() => handleLoadingSuccess({ setIsLoadingComplete }), [])}
+        startAsync={loadResourcesAsync}
+        onError={exceptionsHandler}
+        onFinish={loadResourcesSuccess}
       />
     );
   }
   return (
-    <View style={styles.container}>
-      {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
-    </View>
+    <Provider store={configureStore()}>
+      <View style={styles.container}>
+        {Platform.OS === 'ios' && <StatusBar style={styles.statusBar} />}
+        <AppNavigator />
+      </View>
+    </Provider>
   );
 };
-export default App;
+
+App.propTypes = {
+  loadResourcesSuccess: PropTypes.func.isRequired,
+  loadResourcesAsync: PropTypes.func.isRequired,
+  isLoadingComplete: PropTypes.bool.isRequired,
+};
+
+export default compose(
+  withState('isLoadingComplete', 'setIsLoadingComplete', false),
+  withHandlers({
+    loadResourcesSuccess: ({ setIsLoadingComplete }) => () => setIsLoadingComplete(true),
+    loadResourcesAsync: () => async () => Promise.all([
+      Asset.loadAsync([
+        // eslint-disable-next-line global-require
+        require('./assets/images/robot-dev.png'),
+        // eslint-disable-next-line global-require
+        require('./assets/images/robot-prod.png'),
+      ]),
+      Font.loadAsync([
+        // eslint-disable-next-line global-require
+        require('./assets/fonts/SpaceMono-Regular.ttf'),
+      ]),
+    ]),
+  }),
+)(App);

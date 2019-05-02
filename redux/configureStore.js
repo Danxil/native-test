@@ -2,7 +2,6 @@ import { createStore, applyMiddleware, combineReducers } from 'redux';
 import { apiMiddleware } from 'redux-api-middleware';
 import createSagaMiddleware from 'redux-saga';
 import logger from 'redux-logger';
-import { fork } from 'redux-saga/effects';
 import restApiInjector from './middlewares/restApiInjector';
 
 import user from './user';
@@ -12,8 +11,8 @@ export default () => {
     user,
   });
 
-  const rootSaga = function* () {
-  };
+  // const rootSaga = function* () {
+  // };
 
   const sagaMiddleware = createSagaMiddleware();
 
@@ -30,7 +29,7 @@ export default () => {
     applyMiddleware(...middlewares),
   );
 
-  sagaMiddleware.run(rootSaga);
+  // sagaMiddleware.run(rootSaga);
 
   return store;
 };

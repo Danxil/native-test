@@ -36,7 +36,13 @@
     "eslint-plugin-import": "^2.17.2",
     "eslint-plugin-jsx-a11y": "^6.2.1",
     "eslint-plugin-react": "^7.12.4",
+    "husky": "^2.2.0",
     "jest-expo": "^32.0.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-push": "npm lint"
+    }
   },
   "private": true
 }
